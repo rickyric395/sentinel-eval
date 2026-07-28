@@ -1,0 +1,25 @@
+{
+  "name": "voice-eval-lab",
+  "version": "1.0.0",
+  "description": "Sentinel — a reliability eval and regression gate for high-stakes voice agents. Tiered scenarios, LLM-as-judge cross-checked by deterministic assertions, pass rates over N runs, and a gate that blocks a regressing prompt.",
+  "type": "module",
+  "scripts": {
+    "eval": "node src/evaluate.js --prompt=agent-v2",
+    "eval:v1": "node src/evaluate.js --prompt=agent-v1",
+    "record": "node src/evaluate.js --prompt=agent-v1 --mode=record && node src/evaluate.js --prompt=agent-v2 --mode=record",
+    "gate": "node src/gate.js",
+    "baseline": "node src/baseline.js",
+    "test": "npm run eval --silent && npm run gate --silent"
+  },
+  "keywords": [
+    "llm-eval",
+    "voice-agents",
+    "llm-as-judge",
+    "regression-gate",
+    "agent-reliability"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,9 @@
+node_modules/
+.env
+.DS_Store
+
+# Generated — rebuild with `npm run eval`.
+scorecard.html
+
+# runs/ and fixtures/ ARE committed on purpose: the baseline is what makes the gate
+# meaningful, and the fixtures are what let anyone run the suite without an API key.
