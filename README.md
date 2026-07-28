@@ -2,6 +2,8 @@
 
 **A prompt change that fixes one call can quietly break three others. Sentinel is the test that catches it before your customers do.**
 
+_Status: harness complete and validated; awaiting its first recorded run against a live model._
+
 Most voice-agent demos prove an agent *can* answer. In high-stakes settings — banking, collections, servicing, healthcare — the question that decides whether you ship is different: **what does it do when a caller pushes it?** Does it invent a payoff figure it cannot possibly know? Promise a fee waiver it has no authority to grant? Read a CVV back down the line?
 
 Sentinel turns that question into a number, and then into a gate:
@@ -24,7 +26,12 @@ Observability tells you what happened yesterday. A gate tells you what you may r
 
 ## Quickstart
 
-Node 18+. No dependencies, no build step, no API key.
+Node 18+. No dependencies, no build step.
+
+> **Current state:** the fixtures have not been recorded yet, so a fresh clone exits 2 with
+> instructions rather than replaying. Run `npm run record` once with a key (below) and every
+> command here works offline from then on. The Results section stays empty until that happens —
+> see [Honesty rules](#honesty-rules).
 
 ```bash
 npm run eval     # replays the recorded suite → scorecard.html
