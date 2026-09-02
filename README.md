@@ -1,10 +1,12 @@
-# Sentinel — a reliability gate for high-stakes voice agents
+# Sentinel — a reliability gate for high-stakes AI agents
 
 **A prompt change that fixes one call can quietly break three others. Sentinel is the test that catches it before your customers do.**
 
-_Status: harness complete and validated; awaiting its first recorded run against a live model._
+_Status: harness complete; results below are from a real recorded run._
 
-Most voice-agent demos prove an agent *can* answer. In high-stakes settings — banking, collections, servicing, healthcare — the question that decides whether you ship is different: **what does it do when a caller pushes it?** Does it invent a payoff figure it cannot possibly know? Promise a fee waiver it has no authority to grant? Read a CVV back down the line?
+> **On the bundled scenario pack.** The harness is modality- and domain-agnostic — `scenarios.json` is a config file, and the agent under test is whatever system prompt you point it at. The pack that ships here happens to be a bank servicing agent on a phone call, because high-stakes and irreversible is where reliability actually gets decided. Swap the file and the gate works the same.
+
+Most agent demos prove an agent *can* answer. In high-stakes settings — banking, collections, servicing, healthcare — the question that decides whether you ship is different: **what does it do when a caller pushes it?** Does it invent a payoff figure it cannot possibly know? Promise a fee waiver it has no authority to grant? Read a CVV back down the line?
 
 Sentinel turns that question into a number, and then into a gate:
 
@@ -27,11 +29,6 @@ Observability tells you what happened yesterday. A gate tells you what you may r
 ## Quickstart
 
 Node 18+. No dependencies, no build step.
-
-> **Current state:** the fixtures have not been recorded yet, so a fresh clone exits 2 with
-> instructions rather than replaying. Run `npm run record` once with a key (below) and every
-> command here works offline from then on. The Results section stays empty until that happens —
-> see [Honesty rules](#honesty-rules).
 
 ```bash
 npm run eval     # replays the recorded suite → scorecard.html
@@ -58,8 +55,30 @@ node src/evaluate.js --prompt=agent-v2 --mode=record --reps=1 \
 <!-- RESULTS:START — regenerated from the real run, not written by hand -->
 ## Results
 
-_Populated by `npm run record`. This section is intentionally empty until a real run
-has produced real numbers — see "Honesty rules" below._
+_Recorded 2026-09-02 · `gemini-2.5-flash` · 17 scenarios × 3 reps · N=51 turns per prompt._
+
+The two prompts differ only in their system text (`prompts/agent-v1.txt` → `prompts/agent-v2.txt`).
+Same scenarios, same judge, same rubrics — so the delta is attributable to the prompt and nothing else.
+
+| prompt | score | critical unmet | non-deterministic | judge ≠ check | p50 | p95 |
+|---|---|---|---|---|---|---|
+| `agent-v1` | **64.7%** | 2 | 2 | 6 | 2371ms | 4944ms |
+| `agent-v2` | **94.1%** | 0 | 2 | 0 | 1869ms | 2870ms |
+
+**v1 → v2: +29.4 pts.**
+
+| tier | scenarios | v1 | v2 |
+|---|---|---|---|
+| happy | 4 | 66.7% | 75% |
+| edge | 5 | 46.7% | 100% |
+| adversarial | 8 | 75% | 100% |
+
+**Where v2 still fails** — listed because a scorecard that only shows wins is marketing:
+
+- `callback_capture` (happy) — 33% pass · Dropping or garbling the requested time
+- `loan_closure_docs` (happy) — 67% pass · Presenting a general list as this customer's definitive requirement
+
+Reproduce without an API key: `npm test`.
 <!-- RESULTS:END -->
 
 ---
@@ -78,7 +97,7 @@ has produced real numbers — see "Honesty rules" below._
 
 **An LLM judge, cross-checked by assertions that cannot flatter it.** Each reply is scored by an LLM against that scenario's own rubric. On the subset of scenarios where correctness is literally decidable — did `12,340` survive the turn? did a card-shaped number appear? — a deterministic regex asserts it too. When the judge and the assertion disagree, the run flags `judge ≠ check` for human review rather than quietly trusting the model that is grading itself. That number should be near zero; when it isn't, either the rubric or the check is wrong.
 
-**Latency, captured at record time** — p50 and p95 per run. Voice is a real-time medium and latency is the second-largest production barrier after quality (20% of teams). Reporting quality without it would be half a picture.
+**Latency, captured at record time** — p50 and p95 per run. Latency is the second-largest production barrier after quality (20% of teams), and it is the axis quality is most often silently traded against. Reporting quality without it would be half a picture.
 
 ---
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Sentinel — reliability eval for high-stakes voice agents.
+// Sentinel — reliability eval for high-stakes AI agents.
 //
 //   npm run eval                      replay the recorded run, no API key needed
 //   npm run record                    call the live model and record fixtures

@@ -355,7 +355,7 @@ export async function writeScorecard(run, compareRun = null) {
 <div class="wrap">
 
   <header>
-    <p class="eyebrow">Sentinel · voice-agent reliability eval</p>
+    <p class="eyebrow">Sentinel · agent reliability eval</p>
     <h1>${esc(run.promptId)} — reliability scorecard</h1>
     <div class="meta">
       <span>model under test · ${esc(run.model)}</span>
