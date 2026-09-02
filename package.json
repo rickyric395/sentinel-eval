@@ -14,7 +14,8 @@
     "pareto": "node src/pareto.js",
     "pareto:report": "node src/pareto-report.js",
     "judge:set": "node src/judge-set.js",
-    "judge:eval": "node src/judge-eval.js"
+    "judge:eval": "node src/judge-eval.js",
+    "hinglish:report": "node src/hinglish-report.js"
   },
   "keywords": [
     "llm-eval",
