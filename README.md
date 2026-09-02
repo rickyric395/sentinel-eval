@@ -155,6 +155,50 @@ Full chart: `pareto.html`. Reproduce: `npm run pareto -- --mode=replay`.
 
 ---
 
+## How I know the judge works
+
+Every number above is produced by an LLM judge. Nothing so far establishes that the judge is any
+good, so this is the layer that checks the checker.
+
+**The metric most people report is the wrong one.** On this corpus 79.4% of turns are passes — so
+a judge that answers "pass" unconditionally would agree with a human **79.4% of the time while
+catching nothing at all**. Any "% agreement" headline near that number is not evidence.
+
+So the harness reports **TPR and TNR**, with failure as the positive class:
+
+- **TPR** — of the turns a human called FAIL, how many did the judge catch?
+- **TNR** — of the turns a human called PASS, how many did it leave alone?
+
+and prints the degenerate always-pass baseline next to them, so you can see for yourself whether
+the headline figure meant anything.
+
+**Two refusals are built in.** `judge:set` exits non-zero if only one label polarity is present,
+and `judge:eval` refuses to score single-polarity labels. This isn't hypothetical: OpenAI's own
+LLM-as-judge cookbook validates against an all-negative label set, where a degenerate judge that
+always answers one way scores 100%.
+
+**Cohen's kappa is deliberately not computed.** Kappa measures agreement *between annotators*; with
+one annotator it isn't defined. Printing a kappa computed against the judge under test would be
+worse than printing nothing, so the output says so in words instead.
+
+**The labelling tool hides the judge's verdict until after you commit.** Show it first and the
+number measures suggestibility, not accuracy.
+
+```bash
+npm run judge:set     # builds judge-set.json — 102 turns, both polarities, stratified by tier
+open label.html       # label them; the judge's answer is revealed only after yours
+npm run judge:eval    # TPR / TNR / precision, plus the degenerate baseline
+```
+
+### Results: not yet measured
+
+_This section stays empty until a human has labelled the set. The set is built and the scorer
+works; the number requires roughly 40 minutes of expert labelling. Filling it with model-generated
+labels would make the headline "a model grading a model, published as human agreement" — the exact
+failure the honesty rules below exist to prevent._
+
+---
+
 ## The gate
 
 Four rules, checked against a committed baseline (`runs/baseline.json`):
@@ -192,10 +236,14 @@ The things worth arguing about, and where I landed:
 
 Scoping is part of the work, so this list is explicit rather than implied:
 
+- **Confidence intervals on the suite score.** This is now the top of the backlog, ahead of every
+  feature below. Re-recording an identical configuration moved the score 13.7 points (see "The
+  number moved when I ran it again"), which means a bare point estimate overstates what 51 turns
+  can support. More reps and a stated spread, before anything else.
+
 - **Multi-turn conversations.** Every scenario is a single turn. Real agents fail across turns — context drift, state corruption, goal drift under pressure — and that is the single most valuable thing to add next. Left out because doing it properly means a conversation-state model and branching rubrics, which is a rewrite, not a feature.
 - **Severity weighting.** All scenarios weight equally in the score, so a PII leak and a clumsy clarification move the number identically. The `critical` flag is the blunt version of the fix: those can't be traded off at all.
 - **A voice layer.** Text in, text out. Real STT/TTS adds the failures that matter most in Indian deployments — accents, code-switching, mangled amounts — but needs audio fixtures, which is its own project.
-- **Cost modelling.** Latency is captured; token cost isn't.
 - **A UI.** The scorecard is a generated file. Run history, trends, and diffing live runs would need a server, and this needed to stay clone-and-run.
 
 ---
@@ -212,6 +260,14 @@ src/provider.js         model access with record / replay / live modes
 src/gate.js             the four gate rules
 src/baseline.js         promote a run to baseline (deliberately manual)
 src/report.js           scorecard renderer
+src/results.js          regenerates the README Results block from runs/*.json
+src/pareto.js           the quality x cost x latency sweep (judge pinned, agent model varies)
+src/pareto-report.js    renders pareto.html and the README's cost section
+src/judge-set.js        builds the labelling set + label.html
+src/judge-eval.js       scores the judge: TPR / TNR, never a bare agreement rate
+src/label-template.html the labelling tool; hides the judge's verdict until you commit
+scenarios-hinglish.json the same suite, code-switched — only the input language changes
+pricing.json            list prices used to turn measured tokens into money (editable)
 runs/                   committed run results + the baseline the gate compares against
 fixtures/               recorded model responses — what makes the suite runnable with no key
 ```
