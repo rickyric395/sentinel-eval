@@ -114,7 +114,7 @@ Four rules, checked against a committed baseline (`runs/baseline.json`):
 
 The baseline only moves when a human moves it (`npm run baseline`). If the gate could promote its own baseline, a slow slide would never trip it — every regression would silently become the new normal.
 
-`.github/workflows/eval-gate.yml` runs the replay gate on every PR (free, deterministic, no secrets) and re-records against the live model nightly, because **a model can drift under a prompt that never changed.** Those are two genuinely different failures and they need two different jobs.
+CI (`.github/workflows/eval-gate.yml`, added separately) runs the replay gate on every PR (free, deterministic, no secrets) and re-records against the live model nightly, because **a model can drift under a prompt that never changed.** Those are two genuinely different failures and they need two different jobs.
 
 ---
 
