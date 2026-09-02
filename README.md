@@ -83,6 +83,60 @@ Reproduce without an API key: `npm test`.
 
 ---
 
+## The number moved when I ran it again
+
+The suite run above scored `agent-v1` at **64.7%**. The cost/quality sweep below re-recorded
+the identical configuration — same prompt, same `gemini-2.5-flash`, same judge, same rubrics —
+and scored it **78.4%**. `agent-v2` moved too, 94.1% to 90.2%.
+
+So the headline **+29.4 points does not reproduce**. Measured inside a single sweep, the same
+prompt change is worth **+11.8 points**.
+
+| | `agent-v1` | `agent-v2` | delta |
+|---|---|---|---|
+| suite run | 64.7% | 94.1% | +29.4 |
+| sweep re-record | 78.4% | 90.2% | +11.8 |
+
+**What reproduced: the direction.** `agent-v2` beat `agent-v1` in both recordings, on every tier,
+and took critical-unmet from 2 to 0 or 1 both times. **What did not reproduce: the magnitude.**
+
+The cause is not a bug, it is the sample size. 17 scenarios × 3 reps is 51 turns, scored by a
+model at temperature 0.4 and judged by another model. Three reps is enough to notice that a
+scenario is unstable — two of them are — but nowhere near enough to put a point estimate on a
+suite-level score. A single scenario flipping between 0/3 and 3/3 moves the suite score by 5.9
+points on its own.
+
+**This is left in rather than tidied away, and the first number was not quietly replaced with the
+more flattering one.** A repo that publishes a delta it cannot reproduce is worth less than one
+that publishes the variance. The honest claim this suite supports today is *"the tightened prompt
+is better, by somewhere between roughly 10 and 30 points"* — not a single figure.
+
+**The fix is known and not yet built:** more reps, and confidence intervals on the suite score
+rather than a bare number. That is the next thing this harness needs, ahead of any new feature.
+
+---
+
+<!-- PARETO:START -->
+## Cost, quality and latency
+
+_Recorded 2026-09-02 · 17 scenarios × 3 reps per point · judge pinned at `gemini-2.5-flash` so the agent model is the only variable._
+
+| prompt | model | quality | cost / 1k turns | p50 | p95 | critical unmet |
+|---|---|---|---|---|---|---|
+| `agent-v1` | `gemini-2.5-flash-lite` | **72.5%** | $0.030 | 926ms | 4923ms | 2 |
+| `agent-v2` | `gemini-2.5-flash-lite` | **86.3%** | $0.087 | 778ms | 934ms | 0 |
+| `agent-v1` | `gemini-2.5-flash` | **78.4%** | $0.677 | 2110ms | 4567ms | 2 |
+| `agent-v2` | `gemini-2.5-flash` | **90.2%** | $0.737 | 1922ms | 3253ms | 1 |
+
+**The tightened prompt on the cheap model beats the naive prompt on the expensive one — on every axis at once.** `agent-v2` on `gemini-2.5-flash-lite` scores 86.3% at $0.087 per 1,000 turns; `agent-v1` on `gemini-2.5-flash` scores 78.4% at $0.677. That is **+7.9 points of quality for 7.7× less money and 2.7× lower latency.** Buying a better model was the more expensive way to get less.
+
+Cost is computed from measured token counts (the API's own `usageMetadata`), priced by `pricing.json`. Correct a stale price and re-render — `npm run pareto:report` recomputes without spending a call. Latency is wall-clock from the recording run on a home connection: treat it as relative, not as a served-production SLA.
+
+Full chart: `pareto.html`. Reproduce: `npm run pareto -- --mode=replay`.
+<!-- PARETO:END -->
+
+---
+
 ## What it measures
 
 **Three tiers, because an all-traps suite flatters you.** A suite made only of adversarial cases will go from 10% to 95% the moment you write a strict prompt, and that delta means nothing — you wrote both the test and the fix. So the suite includes ordinary requests the agent should simply handle:

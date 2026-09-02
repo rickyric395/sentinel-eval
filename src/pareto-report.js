@@ -138,6 +138,43 @@ treat it as relative, not as a served-production SLA.</p>
 </main>`;
 
 await writeFile(path.join(ROOT, "pareto.html"), html);
+
+// Also regenerate the README section, for the same reason results.js exists: a number in
+// the prose that no run produced is the one failure the honesty rules are here to prevent.
+const START = /<!--\s*PARETO:START[^>]*-->/;
+const END = "<!-- PARETO:END -->";
+const readmePath = path.join(ROOT, "README.md");
+let readme = await readFile(readmePath, "utf8");
+const m = readme.match(START), endAt = readme.indexOf(END);
+if (m && endAt !== -1) {
+  const byKey = Object.fromEntries(priced.map((p) => [p.promptId + "|" + p.model, p]));
+  const liteV2 = byKey["agent-v2|gemini-2.5-flash-lite"], flashV1 = byKey["agent-v1|gemini-2.5-flash"];
+  const rowsMd = priced
+    .map((p) => `| \`${p.promptId}\` | \`${p.model}\` | **${p.score}%** | ${money(p.costPer1kTurns)} | ${p.latencyMsP50}ms | ${p.latencyMsP95}ms | ${p.criticalUnmet.length} |`)
+    .join("\n");
+  let block = `\n## Cost, quality and latency\n\n` +
+    `_Recorded ${run.generatedAt.slice(0, 10)} · ${run.scenarioCount} scenarios × ${run.reps} reps per point · ` +
+    `judge pinned at \`${run.judgeModel}\` so the agent model is the only variable._\n\n` +
+    `| prompt | model | quality | cost / 1k turns | p50 | p95 | critical unmet |\n` +
+    `|---|---|---|---|---|---|---|\n${rowsMd}\n\n`;
+  if (liteV2 && flashV1) {
+    const x = (flashV1.costPer1kTurns / liteV2.costPer1kTurns).toFixed(1);
+    const f = (flashV1.latencyMsP50 / liteV2.latencyMsP50).toFixed(1);
+    block += `**The tightened prompt on the cheap model beats the naive prompt on the expensive one — ` +
+      `on every axis at once.** \`agent-v2\` on \`gemini-2.5-flash-lite\` scores ${liteV2.score}% at ` +
+      `${money(liteV2.costPer1kTurns)} per 1,000 turns; \`agent-v1\` on \`gemini-2.5-flash\` scores ` +
+      `${flashV1.score}% at ${money(flashV1.costPer1kTurns)}. That is ` +
+      `**+${Math.round((liteV2.score - flashV1.score) * 10) / 10} points of quality for ${x}× less money and ${f}× lower latency.** ` +
+      `Buying a better model was the more expensive way to get less.\n\n`;
+  }
+  block += `Cost is computed from measured token counts (the API's own \`usageMetadata\`), priced by ` +
+    `\`pricing.json\`. Correct a stale price and re-render — \`npm run pareto:report\` recomputes without ` +
+    `spending a call. Latency is wall-clock from the recording run on a home connection: treat it as ` +
+    `relative, not as a served-production SLA.\n\nFull chart: \`pareto.html\`. Reproduce: \`npm run pareto -- --mode=replay\`.\n`;
+  readme = readme.slice(0, m.index + m[0].length) + block + readme.slice(endAt);
+  await writeFile(readmePath, readme);
+  console.log("  Updated the README's cost/quality/latency section");
+}
 console.log(`\n  Wrote pareto.html — ${priced.length} points, ${frontier.size} on the frontier`);
 for (const p of priced) console.log(`    ${p.promptId.padEnd(9)} ${p.model.padEnd(23)} ${String(p.score).padStart(5)}%  ${money(p.costPer1kTurns).padStart(8)}/1k  p50 ${p.latencyMsP50}ms`);
 console.log();

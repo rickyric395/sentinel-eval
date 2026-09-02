@@ -1,0 +1,125 @@
+<!doctype html><meta charset="utf-8"><title>Sentinel — quality vs cost</title>
+<style>
+ :root{--bg:#fbfbf9;--fg:#16161a;--mut:#6b6b76;--line:#e3e3dd;--on:#0f766e;--off:#9a9aa4;--card:#fff}
+ @media(prefers-color-scheme:dark){:root{--bg:#111114;--fg:#ececf0;--mut:#9a9aa4;--line:#2a2a30;--on:#2dd4bf;--off:#55555f;--card:#18181c}}
+ *{box-sizing:border-box}
+ body{margin:0;padding:40px 20px;background:var(--bg);color:var(--fg);
+   font:15px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+ main{max-width:860px;margin:0 auto}
+ h1{font-size:26px;letter-spacing:-.02em;margin:0 0 6px}
+ .sub{color:var(--mut);margin:0 0 28px}
+ .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin:22px 0}
+ svg{width:100%;height:auto;display:block}
+ .grid{stroke:var(--line);stroke-width:1}
+ .tick{fill:var(--mut);font-size:11px;font-family:ui-monospace,monospace}
+ .axis{fill:var(--mut);font-size:12px}
+ .pt.on circle{fill:var(--on)} .pt.off circle{fill:var(--off)}
+ .pt text{fill:var(--fg);font-size:11.5px;font-family:ui-monospace,monospace}
+ table{border-collapse:collapse;width:100%;font-size:13.5px}
+ th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
+ th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+ td.n{text-align:right;font-family:ui-monospace,monospace}
+ tr.on td{background:color-mix(in srgb,var(--on) 9%,transparent)}
+ code{font-family:ui-monospace,monospace;font-size:12.5px}
+ .note{color:var(--mut);font-size:13px}
+ .wrap{overflow-x:auto}
+</style>
+<main>
+<h1>Quality is not what you pay for</h1>
+<p class="sub">4 configurations · 17 scenarios × 3 reps ·
+judge pinned at <code>gemini-2.5-flash</code> · recorded 2026-09-02</p>
+
+<div class="card">
+<svg viewBox="0 0 720 420" role="img" aria-label="Quality against cost per 1,000 turns">
+ <line class="grid" x1="74" y1="28" x2="74" y2="358"/>
+      <text class="tick" x="74" y="378" text-anchor="middle">$0.000</text>
+<line class="grid" x1="197.60000000000002" y1="28" x2="197.60000000000002" y2="358"/>
+      <text class="tick" x="197.60000000000002" y="378" text-anchor="middle">$0.184</text>
+<line class="grid" x1="321.20000000000005" y1="28" x2="321.20000000000005" y2="358"/>
+      <text class="tick" x="321.20000000000005" y="378" text-anchor="middle">$0.368</text>
+<line class="grid" x1="444.8" y1="28" x2="444.8" y2="358"/>
+      <text class="tick" x="444.8" y="378" text-anchor="middle">$0.553</text>
+<line class="grid" x1="568.4000000000001" y1="28" x2="568.4000000000001" y2="358"/>
+      <text class="tick" x="568.4000000000001" y="378" text-anchor="middle">$0.737</text>
+<line class="grid" x1="692" y1="28" x2="692" y2="358"/>
+      <text class="tick" x="692" y="378" text-anchor="middle">$0.921</text>
+<line class="grid" x1="74" y1="358" x2="692" y2="358"/>
+      <text class="tick" x="62" y="362" text-anchor="end">61%</text>
+<line class="grid" x1="74" y1="291.99999999999994" x2="692" y2="291.99999999999994"/>
+      <text class="tick" x="62" y="295.99999999999994" text-anchor="end">68%</text>
+<line class="grid" x1="74" y1="226.00000000000003" x2="692" y2="226.00000000000003"/>
+      <text class="tick" x="62" y="230.00000000000003" text-anchor="end">76%</text>
+<line class="grid" x1="74" y1="159.99999999999997" x2="692" y2="159.99999999999997"/>
+      <text class="tick" x="62" y="163.99999999999997" text-anchor="end">84%</text>
+<line class="grid" x1="74" y1="94.00000000000006" x2="692" y2="94.00000000000006"/>
+      <text class="tick" x="62" y="98.00000000000006" text-anchor="end">92%</text>
+<line class="grid" x1="74" y1="28" x2="692" y2="28"/>
+      <text class="tick" x="62" y="32" text-anchor="end">100%</text>
+ <text class="axis" x="383" y="406" text-anchor="middle">cost per 1,000 turns (agent only)</text>
+ <text class="axis" transform="translate(18,193) rotate(-90)" text-anchor="middle">pass rate</text>
+ <g class="pt on">
+      <circle cx="94.4685760825302" cy="257.746835443038" r="9"/>
+      <text x="94.4685760825302" y="241.74683544303798" text-anchor="middle">agent-v1 · flash-lite</text>
+    </g>
+<g class="pt off">
+      <circle cx="528.4023890321705" cy="208.4556962025316" r="7"/>
+      <text x="528.4023890321705" y="192.4556962025316" text-anchor="middle">agent-v1 · flash</text>
+    </g>
+<g class="pt on">
+      <circle cx="132.7213248269309" cy="142.45569620253167" r="9"/>
+      <text x="132.7213248269309" y="126.45569620253167" text-anchor="middle">agent-v2 · flash-lite</text>
+    </g>
+<g class="pt on">
+      <circle cx="568.4000000000001" cy="109.87341772151893" r="9"/>
+      <text x="568.4000000000001" y="93.87341772151893" text-anchor="middle">agent-v2 · flash</text>
+    </g>
+</svg>
+<p class="note">Filled teal = on the cost/quality frontier. Cost is computed from
+<b>measured</b> token counts (the API's own <code>usageMetadata</code>) priced by
+<code>pricing.json</code> — correct a stale price and re-render, no re-run needed.</p>
+</div>
+
+<div class="card wrap">
+<table>
+<thead><tr><th>prompt</th><th>model</th><th>quality</th><th>cost / 1k turns</th>
+<th>p50</th><th>p95</th><th>tok in/out</th><th>critical unmet</th></tr></thead>
+<tbody><tr class="on">
+      <td><code>agent-v1</code></td><td><code>gemini-2.5-flash-lite</code></td>
+      <td class="n"><b>72.5%</b></td>
+      <td class="n">$0.030</td>
+      <td class="n">926ms</td><td class="n">4923ms</td>
+      <td class="n">57 / 62</td>
+      <td class="n">2</td></tr>
+<tr class="on">
+      <td><code>agent-v2</code></td><td><code>gemini-2.5-flash-lite</code></td>
+      <td class="n"><b>86.3%</b></td>
+      <td class="n">$0.087</td>
+      <td class="n">778ms</td><td class="n">934ms</td>
+      <td class="n">739 / 34</td>
+      <td class="n">0</td></tr>
+<tr>
+      <td><code>agent-v1</code></td><td><code>gemini-2.5-flash</code></td>
+      <td class="n"><b>78.4%</b></td>
+      <td class="n">$0.677</td>
+      <td class="n">2110ms</td><td class="n">4567ms</td>
+      <td class="n">57 / 264</td>
+      <td class="n">2</td></tr>
+<tr class="on">
+      <td><code>agent-v2</code></td><td><code>gemini-2.5-flash</code></td>
+      <td class="n"><b>90.2%</b></td>
+      <td class="n">$0.737</td>
+      <td class="n">1922ms</td><td class="n">3253ms</td>
+      <td class="n">739 / 206</td>
+      <td class="n">1</td></tr></tbody></table>
+</div>
+
+<div class="card">
+<p class="note"><b>How to read this.</b> The judge model is identical across all
+4 points, so the agent model is the only thing that varies within a
+prompt. Cheapest configuration is <code>agent-v1</code> on
+<code>gemini-2.5-flash-lite</code> at $0.030 per 1,000 turns;
+highest quality is <code>agent-v2</code> on <code>gemini-2.5-flash</code>
+at 90.2%. Latency is wall-clock from the recording run on a home connection —
+treat it as relative, not as a served-production SLA.</p>
+</div>
+</main>
