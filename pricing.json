@@ -1,0 +1,15 @@
+{
+  "_comment": [
+    "List prices in USD per 1,000,000 tokens, used only to convert MEASURED token counts into money.",
+    "Tokens are the ground truth here: they come from the API's own usageMetadata and are recorded",
+    "in runs/pareto.json. Prices are editable inputs, not measurements — if these are stale, correct",
+    "them and re-run `npm run pareto:report`, which recomputes cost without spending a single call.",
+    "Verify against https://ai.google.dev/gemini-api/docs/pricing before quoting any dollar figure."
+  ],
+  "_asOf": "2026-09-02",
+  "_source": "https://ai.google.dev/gemini-api/docs/pricing",
+  "models": {
+    "gemini-2.5-flash":      { "inputPerMTok": 0.30, "outputPerMTok": 2.50 },
+    "gemini-2.5-flash-lite": { "inputPerMTok": 0.10, "outputPerMTok": 0.40 }
+  }
+}

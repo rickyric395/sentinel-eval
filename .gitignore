@@ -7,3 +7,6 @@ scorecard.html
 
 # runs/ and fixtures/ ARE committed on purpose: the baseline is what makes the gate
 # meaningful, and the fixtures are what let anyone run the suite without an API key.
+
+# Personal labelling output — the labels are the annotator's, not the repo's.
+labels.json

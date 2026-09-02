@@ -49,15 +49,25 @@ const MAX_ATTEMPTS = 5;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export class Provider {
-  /** @param {"replay"|"record"|"live"} mode */
-  constructor(mode, promptId) {
+  /**
+   * @param {"replay"|"record"|"live"} mode
+   * @param {string} promptId
+   * @param {{model?: string, fixture?: string}} [opts]
+   *   model   — the model this provider calls. Defaults to MODEL. The Pareto sweep varies
+   *             the agent's model while pinning the judge's, which is only meaningful if a
+   *             provider carries its own model rather than reading one global.
+   *   fixture — fixture file path relative to the repo root. Defaults to the historical
+   *             fixtures/<promptId>.json, so existing recordings keep replaying untouched.
+   */
+  constructor(mode, promptId, opts = {}) {
     this.mode = mode;
     this.promptId = promptId;
+    this.model = opts.model || MODEL;
     this.fixtures = {};
     this.used = new Set();
     this.dirty = false;
     this.calls = 0;
-    this.fixturePath = path.join(ROOT, "fixtures", `${promptId}.json`);
+    this.fixturePath = path.join(ROOT, opts.fixture || path.join("fixtures", `${promptId}.json`));
   }
 
   async load() {
@@ -158,7 +168,7 @@ export class Provider {
   }
 
   async #call({ system, user, temperature }) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent`;
     const body = {
       contents: [{ role: "user", parts: [{ text: user }] }],
       generationConfig: { temperature },
@@ -177,7 +187,7 @@ export class Provider {
       const detail = (await res.text()).slice(0, 400);
       const hint =
         res.status === 404
-          ? `\n  Model "${MODEL}" not found for this key. Try: MODEL=gemini-flash-latest npm run record`
+          ? `\n  Model "${this.model}" not found for this key. Try: MODEL=gemini-flash-latest npm run record`
           : "";
       throw new Error(`Gemini ${res.status}: ${detail}${hint}`);
     }
@@ -185,7 +195,15 @@ export class Provider {
     const data = await res.json();
     const text = (data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join("") ?? "").trim();
     if (!text) throw new Error(`Empty response (finishReason: ${data?.candidates?.[0]?.finishReason ?? "unknown"})`);
-    return { text, latencyMs };
+    // Token counts come from the API's own accounting, so cost is measured rather than
+    // estimated from character counts. Absent on fixtures recorded before this existed.
+    const u = data?.usageMetadata ?? {};
+    const usage = {
+      promptTokens: u.promptTokenCount ?? null,
+      outputTokens: (u.candidatesTokenCount ?? 0) + (u.thoughtsTokenCount ?? 0) || null,
+      totalTokens: u.totalTokenCount ?? null,
+    };
+    return { text, latencyMs, usage };
   }
 }
 

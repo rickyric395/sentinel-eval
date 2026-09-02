@@ -1,0 +1,114 @@
+<!doctype html><meta charset="utf-8"><title>Sentinel — label the judge set</title>
+<style>
+ :root{--bg:#fbfbf9;--fg:#16161a;--mut:#6b6b76;--line:#e3e3dd;--card:#fff;--ok:#0f766e;--no:#b3261e;--warn:#8a6d00}
+ @media(prefers-color-scheme:dark){:root{--bg:#111114;--fg:#ececf0;--mut:#9a9aa4;--line:#2a2a30;--card:#18181c;--ok:#2dd4bf;--no:#ff6b6b;--warn:#e3b341}}
+ *{box-sizing:border-box}
+ body{margin:0;padding:28px 20px 80px;background:var(--bg);color:var(--fg);font:15px/1.65 ui-sans-serif,system-ui,-apple-system,sans-serif}
+ main{max-width:760px;margin:0 auto}
+ h1{font-size:21px;margin:0 0 4px;letter-spacing:-.01em}
+ .sub{color:var(--mut);font-size:13px;margin:0 0 20px}
+ .bar{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin:14px 0 22px}
+ .bar>i{display:block;height:100%;background:var(--ok);transition:width .2s}
+ .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:14px 0}
+ .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:0 0 6px}
+ .who{font-family:ui-monospace,monospace;font-size:14px;white-space:pre-wrap}
+ .meta{display:flex;gap:14px;flex-wrap:wrap;color:var(--mut);font-size:12.5px;margin-bottom:14px}
+ .meta code{font-family:ui-monospace,monospace}
+ .crit{color:var(--no);font-weight:600}
+ button{font:inherit;padding:11px 20px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer}
+ button:hover{border-color:var(--mut)}
+ .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;align-items:center}
+ .p{border-color:var(--ok);color:var(--ok);font-weight:600}
+ .f{border-color:var(--no);color:var(--no);font-weight:600}
+ kbd{font-family:ui-monospace,monospace;font-size:11px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:1px 5px;color:var(--mut)}
+ .rev{margin-top:16px;padding:12px 14px;border-radius:9px;border:1px dashed var(--line);color:var(--mut);font-size:13.5px}
+ .done{text-align:center;padding:40px 0}
+ .warn{color:var(--warn);font-size:13px}
+</style>
+<main>
+<h1>Label the judge set</h1>
+<p class="sub">You are the ground truth. Decide whether the agent's reply is acceptable —
+then, and only then, you see what the judge said. <b>Do not revise a label after seeing the
+judge.</b> Anchoring to the machine is exactly what this measurement exists to rule out.</p>
+<div class="bar"><i id="bar" style="width:0%"></i></div>
+<div id="app"></div>
+</main>
+<script>
+const SET = __SENTINEL_SET__;
+const KEY = "sentinel-labels-v1";
+let labels = {}; try { labels = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) {}
+let revealed = false;
+const app = document.getElementById("app"), bar = document.getElementById("bar");
+const nextIdx = () => SET.turns.findIndex(t => !labels[t.uid]);
+const esc = s => String(s == null ? "" : s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+function render() {
+  const i = nextIdx();
+  bar.style.width = (Object.keys(labels).length / SET.turns.length * 100) + "%";
+  if (i === -1) return done();
+  const t = SET.turns[i];
+  const parts = [];
+  parts.push('<div class="meta"><span>' + (Object.keys(labels).length + 1) + " / " + SET.turns.length + "</span>");
+  parts.push("<span><code>" + esc(t.tier) + "</code></span>");
+  if (t.critical) parts.push('<span class="crit">critical</span>');
+  parts.push("<span>" + esc(t.scenarioName) + "</span></div>");
+  parts.push('<div class="card"><p class="lbl">Failure mode under test</p><div>' + esc(t.failureMode) + "</div></div>");
+  parts.push('<div class="card"><p class="lbl">Customer said</p><div class="who">' + esc(t.customer) + "</div></div>");
+  parts.push('<div class="card"><p class="lbl">Agent replied</p><div class="who">' + esc(t.reply) + "</div></div>");
+  parts.push('<div class="actions">');
+  parts.push('<button class="p" onclick="mark(\'pass\')">Acceptable <kbd>P</kbd></button>');
+  parts.push('<button class="f" onclick="mark(\'fail\')">Not acceptable <kbd>F</kbd></button>');
+  parts.push("<button onclick=\"mark('skip')\">Undecidable <kbd>S</kbd></button>");
+  parts.push('<button onclick="undo()">Undo <kbd>&larr;</kbd></button></div><div id="rev"></div>');
+  app.innerHTML = parts.join("");
+}
+
+window.mark = function (v) {
+  const t = SET.turns[nextIdx()];
+  labels[t.uid] = { label: v, at: new Date().toISOString() };
+  localStorage.setItem(KEY, JSON.stringify(labels));
+  const agree = v === t.judgeVerdict;
+  document.getElementById("rev").innerHTML =
+    '<div class="rev"><b>Judge said: ' + esc(t.judgeVerdict) + "</b> " +
+    (agree ? "&mdash; you agreed" : "&mdash; <b>you disagreed</b>") + "<br>" +
+    '<span style="opacity:.8">' + esc(t.judgeReason) + "</span><br>deterministic check: <code>" +
+    esc(t.deterministicCheck) + "</code></div>";
+  revealed = true;
+  setTimeout(function () { revealed = false; render(); }, 1100);
+};
+
+window.undo = function () {
+  const seen = SET.turns.filter(t => labels[t.uid]);
+  if (!seen.length) return;
+  delete labels[seen[seen.length - 1].uid];
+  localStorage.setItem(KEY, JSON.stringify(labels));
+  render();
+};
+
+function done() {
+  const counts = Object.values(labels).reduce((m, l) => { m[l.label] = (m[l.label] || 0) + 1; return m; }, {});
+  let h = '<div class="done"><h1>All ' + SET.turns.length + " labelled</h1>";
+  h += '<p class="sub">' + esc(JSON.stringify(counts)) + "</p>";
+  if (!(counts.pass && counts.fail))
+    h += '<p class="warn">Only one polarity present &mdash; TPR and TNR cannot both be computed. Re-check your labels.</p>';
+  h += '<button class="p" onclick="save()">Download labels.json</button></div>';
+  app.innerHTML = h;
+  bar.style.width = "100%";
+}
+
+window.save = function () {
+  const payload = { labelledAt: new Date().toISOString(), annotator: "human",
+    setBuiltAt: SET.builtAt, sources: SET.sources, labels: labels };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "labels.json"; a.click();
+};
+
+addEventListener("keydown", function (e) {
+  if (revealed) return;
+  const k = e.key.toLowerCase();
+  if (k === "p") mark("pass"); else if (k === "f") mark("fail");
+  else if (k === "s") mark("skip"); else if (e.key === "ArrowLeft") undo();
+});
+render();
+</script>

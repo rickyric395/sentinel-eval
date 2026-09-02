@@ -29,7 +29,7 @@ const only = arg("only", "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
-const outPath = path.join(ROOT, arg("out", path.join("runs", `${promptId}.json`)));
+const outPathArg = arg("out", null);
 
 const SENTINEL_VERSION = "1.0.0";
 
@@ -42,12 +42,18 @@ const die = (message) => {
   process.exit(2);
 };
 
+// An alternate pack swaps the suite without touching the harness — the point of keeping
+// scenarios in a config file. Fixtures follow the pack, so packs never overwrite each other.
+const scenarioFile = arg("scenarios", "scenarios.json");
+const packId = path.basename(scenarioFile, ".json") === "scenarios" ? promptId : `${promptId}@${path.basename(scenarioFile, ".json")}`;
+
 let allScenarios;
 try {
-  allScenarios = JSON.parse(await readFile(path.join(ROOT, "scenarios.json"), "utf8"));
+  allScenarios = JSON.parse(await readFile(path.join(ROOT, scenarioFile), "utf8"));
 } catch (err) {
-  die(`Cannot read scenarios.json — ${err.message}`);
+  die(`Cannot read ${scenarioFile} — ${err.message}`);
 }
+const outPath = path.join(ROOT, outPathArg ?? path.join("runs", `${packId}.json`));
 
 const scenarios = only.length ? allScenarios.filter((s) => only.includes(s.id)) : allScenarios;
 if (!scenarios.length) die(`No scenarios matched --only=${only.join(",")}`);
@@ -59,7 +65,9 @@ try {
   die(`No prompt at prompts/${promptId}.txt — available prompts live in prompts/.`);
 }
 try {
-  provider = await new Provider(mode, promptId).load();
+  provider = await new Provider(mode, promptId, {
+    fixture: path.join("fixtures", `${packId}.json`),
+  }).load();
 } catch (err) {
   die(err.message);
 }

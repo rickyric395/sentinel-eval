@@ -10,7 +10,11 @@
     "gate": "node src/gate.js",
     "baseline": "node src/baseline.js",
     "test": "npm run eval --silent && npm run gate --silent",
-    "results": "node src/results.js"
+    "results": "node src/results.js",
+    "pareto": "node src/pareto.js",
+    "pareto:report": "node src/pareto-report.js",
+    "judge:set": "node src/judge-set.js",
+    "judge:eval": "node src/judge-eval.js"
   },
   "keywords": [
     "llm-eval",
