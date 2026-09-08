@@ -1,0 +1,30 @@
+{
+  "scoredAt": "2026-09-08T11:13:56.732Z",
+  "labelledAt": "2026-09-08T11:13:02.856Z",
+  "annotators": 1,
+  "n": 102,
+  "positiveClass": "fail",
+  "confusion": {
+    "TP": 17,
+    "FP": 4,
+    "TN": 65,
+    "FN": 16
+  },
+  "humanMix": {
+    "fail": 33,
+    "pass": 69
+  },
+  "metrics": {
+    "TPR": 51.5,
+    "TNR": 94.2,
+    "precision": 81,
+    "balancedAccuracy": 72.9
+  },
+  "degenerateBaseline": {
+    "strategy": "always answer pass",
+    "agreement": 67.6
+  },
+  "rawAgreement": 80.4,
+  "cohensKappa": null,
+  "kappaNote": "Not computed: kappa measures agreement between annotators, and this set has one."
+}

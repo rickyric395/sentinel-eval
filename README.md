@@ -211,9 +211,11 @@ Reproduce: `npm run eval -- --prompt=agent-v2 --scenarios=scenarios-hinglish.jso
 Every number above is produced by an LLM judge. Nothing so far establishes that the judge is any
 good, so this is the layer that checks the checker.
 
-**The metric most people report is the wrong one.** On this corpus 79.4% of turns are passes — so
-a judge that answers "pass" unconditionally would agree with a human **79.4% of the time while
-catching nothing at all**. Any "% agreement" headline near that number is not evidence.
+**The metric most people report is the wrong one.** On this corpus a human called 67.6% of turns
+passes — so a judge that answers "pass" unconditionally would agree with a human **67.6% of the
+time while catching nothing at all**. Any "% agreement" headline near that number is not evidence.
+(Before the set was labelled this figure was stated as 79.4%, which was the *judge's* own pass
+rate standing in for the base rate it was being measured against. The human labels corrected it.)
 
 So the harness reports **TPR and TNR**, with failure as the positive class:
 
@@ -241,12 +243,53 @@ open label.html       # label them; the judge's answer is revealed only after yo
 npm run judge:eval    # TPR / TNR / precision, plus the degenerate baseline
 ```
 
-### Results: not yet measured
+### Results: the judge catches about half of real failures
 
-_This section stays empty until a human has labelled the set. The set is built and the scorer
-works; the number requires roughly 40 minutes of expert labelling. Filling it with model-generated
-labels would make the headline "a model grading a model, published as human agreement" — the exact
-failure the honesty rules below exist to prevent._
+_102 turns drawn from the `agent-v1` and `agent-v2` runs, stratified across tiers and both judge
+verdicts, labelled by hand with the judge's answer hidden until each decision was committed.
+Human labels: 69 pass, 33 fail._
+
+|  | judge: fail | judge: pass |
+|---|---|---|
+| **human: fail** | 17 | **16** |
+| **human: pass** | 4 | 65 |
+
+| metric | value | 95% CI | what it means |
+|---|---|---|---|
+| **TPR** | **51.5%** | 35–67% | of 33 real failures, it caught 17 |
+| **TNR** | **94.2%** | 86–98% | of 69 good replies, it left 65 alone |
+| Precision | 81.0% | 60–92% | when it says fail, it is usually right |
+| Balanced accuracy | 72.9% | — | |
+| Raw agreement | 80.4% | — | **a judge that always says "pass" scores 67.6%** |
+
+**The judge is conservative, not random.** It almost never flags a good reply and it misses
+roughly half the bad ones. That has a direction, which means every quality figure in this
+README is an **over**-estimate — the 94.1%, the Pareto table, the Hinglish 62.7%. The bias
+appears to apply to all arms alike, so comparisons between them survive better than the levels do;
+that is an argument, not a measurement, and it is not yet tested.
+
+**Raw agreement is 80.4% and the do-nothing baseline is 67.6%.** This harness is 12.8 points
+better than a judge that reads nothing and says "pass". Reported on its own, 80.4% would have
+sounded like validation. It is the single strongest argument in this repo for why an agreement
+percentage should never be a headline — and it comes from the repo's own data rather than from
+an appeal to somebody else's.
+
+**Where it goes wrong is not spread evenly.** Disagreements cluster in `number_date_accuracy` (4)
+and `language_switch_hindi` (4), then `mid_turn_correction` (3), `loan_closure_docs` (2),
+`callback_capture` (2). The first two are the same pair the Hinglish run already exposed, reached
+by a completely different route. Two independent lines of evidence now say those rubrics are
+underspecified, so that is where the next edit goes.
+
+**What this number is not.** TPR rests on 33 labelled failures and its interval runs from 35% to
+67% — the honest claim is "between a third and two thirds", not "51.5%". One annotator, so Cohen's
+kappa stays uncomputed. And the labeller wrote the rubrics, which is the standard limitation of
+single-annotator validation and cannot be fixed by relabelling harder.
+
+_Full output is committed at `runs/judge-validation.json`. The labels themselves are **not**
+committed — `labels.json` is gitignored as the annotator's own work — so this is the one number in
+this repo a stranger cannot re-derive by cloning. They can rebuild the set with `npm run judge:set`
+and label it themselves, which is a different and better check: a second annotator is exactly what
+single-annotator validation is missing._
 
 ---
 
